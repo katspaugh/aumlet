@@ -37,7 +37,7 @@ export function generateRandomGraph(): Graph {
     lfoIds.push(id);
     // Random LFO frequency from -6V to -3V (0.5Hz to 4Hz)
     const freq = Math.round(random(-6, -3));
-    const shape = randomChoice(['sine', 'tri', 'saw', 'square']);
+    const shape = randomChoice(['sine', 'tri', 'saw', 'square'] as const);
     modules.push({ id, kind: ModuleKind.LFO, params: { freq, shape } });
   }
 
