@@ -1,21 +1,24 @@
-// Main audio setup and control logic
+import type { Graph } from './types/graph';
+import type { WorkletMessage } from './types/messages';
 
-let audioContext = null;
-let modularNode = null;
+let audioContext: AudioContext | null = null;
+let modularNode: AudioWorkletNode | null = null;
 
 // DOM elements
-const startBtn = document.getElementById('startBtn');
-const graphInput = document.getElementById('graphInput');
-const statusDiv = document.getElementById('status');
+const startBtn = document.getElementById('startBtn') as HTMLButtonElement;
+const graphInput = document.getElementById('graphInput') as HTMLTextAreaElement;
+const statusDiv = document.getElementById('status') as HTMLDivElement;
+
+type StatusType = 'info' | 'success' | 'error';
 
 // Status display helper
-function setStatus(message, type = 'info') {
+function setStatus(message: string, type: StatusType = 'info'): void {
   statusDiv.textContent = message;
-  statusDiv.className = type; // 'info', 'success', 'error'
+  statusDiv.className = type;
 }
 
 // Initialize audio system
-async function initAudio() {
+async function initAudio(): Promise<void> {
   try {
     setStatus('Initializing audio context...', 'info');
 
@@ -32,7 +35,12 @@ async function initAudio() {
     setStatus('Loading AudioWorklet module...', 'info');
 
     // Load the AudioWorklet processor module
-    await audioContext.audioWorklet.addModule('modular-processor.js');
+    // In dev mode, Vite serves the TS file; in production, use the built bundle
+    const workletPath = import.meta.env.DEV
+      ? '/src/worklet/index.ts'
+      : new URL('./assets/modular-processor.js', import.meta.url).href;
+
+    await audioContext.audioWorklet.addModule(workletPath);
 
     setStatus('Creating modular processor...', 'info');
 
@@ -40,7 +48,7 @@ async function initAudio() {
     modularNode = new AudioWorkletNode(audioContext, 'modular-processor');
 
     // Listen for messages from the processor
-    modularNode.port.onmessage = (e) => {
+    modularNode.port.onmessage = (e: MessageEvent<WorkletMessage>) => {
       if (e.data.type === 'graphLoaded') {
         setStatus('🎵 Audio running! Modular synth active.', 'success');
       } else if (e.data.type === 'error') {
@@ -55,33 +63,33 @@ async function initAudio() {
 
     // Parse and send the graph
     const graphJson = graphInput.value;
-    const graph = JSON.parse(graphJson);
+    const graph = JSON.parse(graphJson) as Graph;
 
     // Send loadGraph message to processor
     modularNode.port.postMessage({
       type: 'loadGraph',
-      graph: graph
+      graph: graph,
     });
 
     // Update button state
     startBtn.textContent = '⏸ Stop Audio';
     startBtn.onclick = stopAudio;
-
   } catch (err) {
     console.error('Audio initialization error:', err);
-    setStatus(`❌ Error: ${err.message}`, 'error');
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    setStatus(`❌ Error: ${message}`, 'error');
   }
 }
 
 // Stop audio
-function stopAudio() {
+function stopAudio(): void {
   if (modularNode) {
     modularNode.disconnect();
     modularNode = null;
   }
 
   if (audioContext) {
-    audioContext.suspend();
+    void audioContext.suspend();
   }
 
   setStatus('Audio stopped.', 'info');
@@ -90,7 +98,7 @@ function stopAudio() {
 }
 
 // Reload graph (for live editing)
-function reloadGraph() {
+function reloadGraph(): void {
   if (!modularNode) {
     setStatus('❌ Start audio first!', 'error');
     return;
@@ -100,24 +108,24 @@ function reloadGraph() {
     setStatus('Reloading graph...', 'info');
 
     const graphJson = graphInput.value;
-    const graph = JSON.parse(graphJson);
+    const graph = JSON.parse(graphJson) as Graph;
 
     modularNode.port.postMessage({
       type: 'loadGraph',
-      graph: graph
+      graph: graph,
     });
-
   } catch (err) {
     console.error('Graph reload error:', err);
-    setStatus(`❌ Error: ${err.message}`, 'error');
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    setStatus(`❌ Error: ${message}`, 'error');
   }
 }
 
 // Event listeners
-startBtn.addEventListener('click', initAudio);
+startBtn.addEventListener('click', () => void initAudio());
 
-// Optional: Keyboard shortcut for quick graph reload (Cmd/Ctrl + Enter)
-graphInput.addEventListener('keydown', (e) => {
+// Keyboard shortcut for quick graph reload (Cmd/Ctrl + Enter)
+graphInput.addEventListener('keydown', (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
     e.preventDefault();
     reloadGraph();

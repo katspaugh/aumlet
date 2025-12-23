@@ -1,0 +1,35 @@
+{
+  "name": "aumlet",
+  "version": "1.0.0",
+  "description": "Modular Synthesizer - AudioWorklet Edition",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.worklet.json --noEmit"
+  },
+  "keywords": [
+    "synthesizer",
+    "audio",
+    "audioworklet",
+    "modular"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/web": "^0.0.307",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0"
+  }
+}

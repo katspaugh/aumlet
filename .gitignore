@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-worklet-temp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories and files
+.DS_Store
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local

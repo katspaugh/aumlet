@@ -1,0 +1,241 @@
+import type { Graph, ModuleDefinition, Connection, ModuleKind } from '../types/graph';
+import type { WorkletMessage } from '../types/messages';
+import { Module } from './modules/Module';
+import { VCO } from './modules/VCO';
+import { VCA } from './modules/VCA';
+import { LFO } from './modules/LFO';
+import { OutputModule } from './modules/OutputModule';
+
+export class ModularProcessor extends AudioWorkletProcessor {
+  private modules: Map<string, Module>;
+  private sortedModules: Module[];
+  private outputModule: OutputModule | null;
+
+  constructor() {
+    super();
+    this.modules = new Map();
+    this.sortedModules = [];
+    this.outputModule = null;
+
+    this.port.onmessage = (e) => this.handleMsg(e.data as WorkletMessage);
+  }
+
+  handleMsg(msg: WorkletMessage): void {
+    if (msg.type === 'loadGraph') {
+      try {
+        this.loadGraph(msg.graph);
+        this.port.postMessage({ type: 'graphLoaded', success: true });
+      } catch (err) {
+        this.port.postMessage({
+          type: 'error',
+          message: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+  }
+
+  loadGraph(graph: Graph): void {
+    this.modules.clear();
+    this.sortedModules = [];
+    this.outputModule = null;
+
+    for (const modDef of graph.modules) {
+      const module = this.createModule(modDef);
+      this.modules.set(modDef.id, module);
+
+      if (modDef.kind === 'OUTPUT') {
+        this.outputModule = module as OutputModule;
+      }
+    }
+
+    const connections = graph.connections || [];
+    this.rebuild(connections);
+  }
+
+  createModule(def: ModuleDefinition): Module {
+    const moduleClasses: Record<
+      ModuleKind,
+      new (id: string, kind: string, params: object) => Module
+    > = {
+      VCO,
+      VCA,
+      LFO,
+      OUTPUT: OutputModule,
+    };
+
+    const ModuleClass = moduleClasses[def.kind];
+    if (!ModuleClass) {
+      throw new Error(`Unknown module kind: ${def.kind}`);
+    }
+
+    return new ModuleClass(def.id, def.kind, def.params || {});
+  }
+
+  rebuild(connections: Connection[]): void {
+    const inDegree = new Map<string, number>();
+    const adjacency = new Map<string, string[]>();
+
+    // Initialize all modules
+    for (const [id, module] of this.modules) {
+      inDegree.set(id, 0);
+      adjacency.set(id, []);
+
+      // Initialize output buffers
+      const outputPorts = this.getOutputPorts(module.kind);
+      for (const port of outputPorts) {
+        module.outputs[port] = new Float32Array(128);
+      }
+
+      // Initialize input buffers and connection tracking
+      const inputPorts = this.getInputPorts(module.kind);
+      module.inputs = {};
+      module.inputConnections = {};
+      for (const port of inputPorts) {
+        module.inputs[port] = new Float32Array(128);
+        module.inputConnections[port] = [];
+      }
+    }
+
+    // Process connections
+    for (const conn of connections) {
+      const fromModule = this.modules.get(conn.from.id);
+      const toModule = this.modules.get(conn.to.id);
+
+      if (!fromModule || !toModule) {
+        throw new Error(`Invalid connection: ${conn.from.id} -> ${conn.to.id}`);
+      }
+
+      // Track dependency for topological sort
+      adjacency.get(conn.from.id)!.push(conn.to.id);
+      inDegree.set(conn.to.id, inDegree.get(conn.to.id)! + 1);
+
+      // Track connection: store reference to source output buffer
+      toModule.inputConnections[conn.to.port].push({
+        buffer: fromModule.outputs[conn.from.port],
+        sourceId: conn.from.id,
+        sourcePort: conn.from.port,
+      });
+    }
+
+    // Topological sort using Kahn's algorithm
+    const queue: string[] = [];
+    const sorted: string[] = [];
+
+    // Start with modules that have no inputs
+    for (const [id, degree] of inDegree) {
+      if (degree === 0) {
+        queue.push(id);
+      }
+    }
+
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      sorted.push(id);
+
+      // Process all modules that depend on this one
+      for (const nextId of adjacency.get(id)!) {
+        const newDegree = inDegree.get(nextId)! - 1;
+        inDegree.set(nextId, newDegree);
+
+        if (newDegree === 0) {
+          queue.push(nextId);
+        }
+      }
+    }
+
+    // Check for cycles
+    if (sorted.length !== this.modules.size) {
+      throw new Error('Circular dependency detected in graph');
+    }
+
+    // Store sorted module references
+    this.sortedModules = sorted.map((id) => this.modules.get(id)!);
+  }
+
+  getInputPorts(kind: string): string[] {
+    const ports: Record<string, string[]> = {
+      VCO: ['pitch', 'fm'],
+      VCA: ['in', 'cv'],
+      LFO: ['rate'],
+      OUTPUT: ['in'],
+    };
+    return ports[kind] || [];
+  }
+
+  getOutputPorts(kind: string): string[] {
+    const ports: Record<string, string[]> = {
+      VCO: ['out'],
+      VCA: ['out'],
+      LFO: ['out'],
+      OUTPUT: ['out'],
+    };
+    return ports[kind] || [];
+  }
+
+  process(
+    _inputs: Float32Array[][],
+    outputs: Float32Array[][],
+    _parameters: Record<string, Float32Array>
+  ): boolean {
+    const output = outputs[0];
+
+    // If no graph loaded, output silence
+    if (this.sortedModules.length === 0) {
+      if (output && output[0]) {
+        output[0].fill(0);
+        if (output[1]) output[1].fill(0);
+      }
+      return true;
+    }
+
+    // Process modules in topologically sorted order
+    for (const module of this.sortedModules) {
+      // Prepare inputs: handle banana stacking (multi-source)
+      for (const [portName, sources] of Object.entries(module.inputConnections)) {
+        const inputBuffer = module.inputs[portName];
+
+        if (sources.length === 0) {
+          // No connection, fill with zero volts
+          inputBuffer.fill(0);
+        } else if (sources.length === 1) {
+          // Single source: copy from source buffer
+          const sourceBuffer = sources[0].buffer;
+          for (let i = 0; i < 128; i++) {
+            inputBuffer[i] = sourceBuffer[i];
+          }
+        } else {
+          // Multiple sources: sum into input buffer (banana stacking)
+          inputBuffer.fill(0);
+          for (const source of sources) {
+            for (let i = 0; i < 128; i++) {
+              inputBuffer[i] += source.buffer[i];
+            }
+          }
+        }
+      }
+
+      // Run module's DSP
+      module.process();
+    }
+
+    // Get final output from OUTPUT module with soft clipping
+    if (this.outputModule && output && output[0]) {
+      const finalOut = this.outputModule.outputs.out;
+
+      // Apply soft clipping (tanh) to prevent harsh clipping
+      for (let i = 0; i < 128; i++) {
+        const clipped = Math.tanh(finalOut[i]);
+        output[0][i] = clipped;
+        if (output[1]) {
+          output[1][i] = clipped; // Mono to stereo
+        }
+      }
+    } else if (output && output[0]) {
+      // No output module, silence
+      output[0].fill(0);
+      if (output[1]) output[1].fill(0);
+    }
+
+    return true;
+  }
+}
