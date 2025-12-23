@@ -195,8 +195,13 @@ export class PatchMatrix {
     this.moduleTable.querySelectorAll<HTMLInputElement>('.param-input').forEach((input) => {
       const index = parseInt(input.dataset.index!);
       const param = input.dataset.param!;
-      const value = input.type === 'number' ? parseFloat(input.value) : input.value;
-      (this.modules[index] as any)[param] = value;
+      const module = this.modules[index];
+
+      if (param === 'freq' && input.type === 'number') {
+        module.freq = parseFloat(input.value);
+      } else if (param === 'shape') {
+        module.shape = input.value;
+      }
     });
 
     const graph = this.toGraph();
@@ -212,7 +217,7 @@ export class PatchMatrix {
         m.freq !== undefined || m.shape
           ? {
               freq: m.freq,
-              shape: m.shape as any,
+              shape: m.shape as 'sine' | 'tri' | 'saw' | 'square' | undefined,
             }
           : undefined,
     }));
