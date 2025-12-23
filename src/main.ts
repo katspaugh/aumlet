@@ -1,19 +1,42 @@
 import type { Graph } from './types/graph';
 import type { WorkletMessage } from './types/messages';
 import { generateRandomGraph } from './utils/randomGraph';
+import { PatchMatrix } from './ui/patchMatrix';
 
 let audioContext: AudioContext | null = null;
 let modularNode: AudioWorkletNode | null = null;
+let currentGraph: Graph | null = null;
 
 // DOM elements
 const startBtn = document.getElementById('startBtn') as HTMLButtonElement;
-const graphInput = document.getElementById('graphInput') as HTMLTextAreaElement;
 const statusDiv = document.getElementById('status') as HTMLDivElement;
+const addVCOBtn = document.getElementById('addVCO') as HTMLButtonElement;
+const addLFOBtn = document.getElementById('addLFO') as HTMLButtonElement;
+const addVCABtn = document.getElementById('addVCA') as HTMLButtonElement;
+const addOutputBtn = document.getElementById('addOutput') as HTMLButtonElement;
+const randomizeBtn = document.getElementById('randomize') as HTMLButtonElement;
+
+// Initialize patch matrix
+const patchMatrix = new PatchMatrix('moduleTable', 'patchMatrix', (graph) => {
+  currentGraph = graph;
+});
 
 // Generate random graph on page load
 window.addEventListener('DOMContentLoaded', () => {
   const randomGraph = generateRandomGraph();
-  graphInput.value = JSON.stringify(randomGraph, null, 2);
+  patchMatrix.loadGraph(randomGraph);
+  currentGraph = randomGraph;
+});
+
+// Add module buttons
+addVCOBtn.addEventListener('click', () => patchMatrix.addModule('VCO'));
+addLFOBtn.addEventListener('click', () => patchMatrix.addModule('LFO'));
+addVCABtn.addEventListener('click', () => patchMatrix.addModule('VCA'));
+addOutputBtn.addEventListener('click', () => patchMatrix.addModule('OUTPUT'));
+randomizeBtn.addEventListener('click', () => {
+  const randomGraph = generateRandomGraph();
+  patchMatrix.loadGraph(randomGraph);
+  currentGraph = randomGraph;
 });
 
 type StatusType = 'info' | 'success' | 'error';
@@ -68,9 +91,8 @@ async function initAudio(): Promise<void> {
 
     setStatus('Loading graph...', 'info');
 
-    // Parse and send the graph
-    const graphJson = graphInput.value;
-    const graph = JSON.parse(graphJson) as Graph;
+    // Get graph from patch matrix
+    const graph = currentGraph || patchMatrix.toGraph();
 
     // Send loadGraph message to processor
     modularNode.port.postMessage({
@@ -114,8 +136,7 @@ function reloadGraph(): void {
   try {
     setStatus('Reloading graph...', 'info');
 
-    const graphJson = graphInput.value;
-    const graph = JSON.parse(graphJson) as Graph;
+    const graph = currentGraph || patchMatrix.toGraph();
 
     modularNode.port.postMessage({
       type: 'loadGraph',
@@ -132,9 +153,11 @@ function reloadGraph(): void {
 startBtn.addEventListener('click', () => void initAudio());
 
 // Keyboard shortcut for quick graph reload (Cmd/Ctrl + Enter)
-graphInput.addEventListener('keydown', (e: KeyboardEvent) => {
+document.addEventListener('keydown', (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
     e.preventDefault();
-    reloadGraph();
+    if (modularNode) {
+      reloadGraph();
+    }
   }
 });

@@ -12,11 +12,42 @@
     <p class="subtitle">Modular Synthesizer - AudioWorklet Edition</p>
 
     <div class="section">
-      <h2>📝 Graph Definition</h2>
-      <textarea id="graphInput" spellcheck="false"></textarea>
+      <h2>🎛️ Modules</h2>
+      <div class="module-controls">
+        <button id="addVCO">+ VCO</button>
+        <button id="addLFO">+ LFO</button>
+        <button id="addVCA">+ VCA</button>
+        <button id="addOutput">+ OUTPUT</button>
+        <button id="randomize" class="randomize-btn">🎲 Randomize</button>
+      </div>
+      <div class="table-container">
+        <table id="moduleTable">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Parameters</th>
+              <th>ID</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <datalist id="moduleTypes">
+        <option value="VCO">
+        <option value="VCA">
+        <option value="LFO">
+        <option value="OUTPUT">
+      </datalist>
+    </div>
+
+    <div class="section">
+      <h2>🔌 Patch Matrix</h2>
+      <div class="table-container">
+        <table id="patchMatrix" class="patch-matrix"></table>
+      </div>
       <p class="info-text">
-        🎲 Random patch generated on load! Features weird feedback loops, cross-modulation, and chaos.
-        Reload page for new patch. V/oct: 0V=C1 (32.7Hz), +1V=1 octave, negative volts for sub-audio.
+        💡 Click cells to connect outputs (rows) to inputs (columns). Multiple connections = banana stacking!
       </p>
     </div>
 
