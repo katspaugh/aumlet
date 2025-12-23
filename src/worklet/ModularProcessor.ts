@@ -4,6 +4,7 @@ import { Module } from './modules/Module';
 import { VCO } from './modules/VCO';
 import { VCA } from './modules/VCA';
 import { LFO } from './modules/LFO';
+import { Slew } from './modules/Slew';
 import { OutputModule } from './modules/OutputModule';
 
 export class ModularProcessor extends AudioWorkletProcessor {
@@ -60,6 +61,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCO,
       VCA,
       LFO,
+      SLEW: Slew,
       OUTPUT: OutputModule,
     };
 
@@ -162,6 +164,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCO: ['pitch', 'fm'],
       VCA: ['in', 'cv'],
       LFO: ['rate'],
+      SLEW: ['in'],
       OUTPUT: ['in'],
     };
     return ports[kind] || [];
@@ -172,6 +175,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCO: ['out'],
       VCA: ['out'],
       LFO: ['out'],
+      SLEW: ['out'],
       OUTPUT: ['out'],
     };
     return ports[kind] || [];

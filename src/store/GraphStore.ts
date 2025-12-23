@@ -1,0 +1,178 @@
+import { createSignal, createMemo } from 'solid-js';
+import type { Graph, ModuleDefinition, Connection, ModuleKind } from '../types/graph';
+
+interface ModuleRow {
+  id: string;
+  type: ModuleKind;
+  params?: {
+    freq?: number;
+    shape?: 'sine' | 'tri' | 'saw' | 'square';
+    riseTime?: number;
+    fallTime?: number;
+  };
+}
+
+export class GraphStore {
+  // Core signals - use createSignal instead of Signal class
+  private _modules = createSignal<ModuleRow[]>([]);
+  readonly modules = this._modules[0]; // getter
+  readonly setModules = this._modules[1]; // setter
+
+  private _connections = createSignal<Connection[]>([]);
+  readonly connections = this._connections[0];
+  readonly setConnections = this._connections[1];
+
+  // Computed signals - use createMemo instead of Computed class
+  readonly outputs = createMemo(() => {
+    return this.modules()
+      .map((m) => {
+        const type = m.type.toUpperCase();
+        if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
+          return `${m.id}.out`;
+        }
+        return null;
+      })
+      .filter((x): x is string => x !== null);
+  });
+
+  readonly inputs = createMemo(() => {
+    const inputs: string[] = [];
+    this.modules().forEach((m) => {
+      const type = m.type.toUpperCase();
+      if (type === 'VCO') {
+        inputs.push(`${m.id}.pitch`, `${m.id}.fm`);
+      } else if (type === 'VCA') {
+        inputs.push(`${m.id}.in`, `${m.id}.cv`);
+      } else if (type === 'LFO') {
+        inputs.push(`${m.id}.rate`);
+      } else if (type === 'SLEW') {
+        inputs.push(`${m.id}.in`);
+      } else if (type === 'OUTPUT') {
+        inputs.push(`${m.id}.in`);
+      }
+    });
+    return inputs;
+  });
+
+  readonly connectionMap = createMemo(() => {
+    const map = new Map<string, Set<string>>();
+    this.connections().forEach((conn) => {
+      const key = `${conn.from.id}.${conn.from.port}`;
+      const val = `${conn.to.id}.${conn.to.port}`;
+      if (!map.has(key)) map.set(key, new Set());
+      map.get(key)!.add(val);
+    });
+    return map;
+  });
+
+  readonly graph = createMemo(() => {
+    const modules: ModuleDefinition[] = this.modules().map((m) => ({
+      id: m.id,
+      kind: m.type,
+      params: m.params,
+    }));
+
+    return {
+      modules,
+      connections: this.connections(),
+    };
+  });
+
+  // Actions
+  addModule(type: ModuleKind, params?: ModuleRow['params']): string {
+    const lowerType = type.toLowerCase();
+    const count = this.modules().filter((m) => m.type === type).length + 1;
+    const id = `${lowerType}${count}`;
+
+    const defaultParams: Record<ModuleKind, ModuleRow['params'] | undefined> = {
+      VCO: { freq: 0 },
+      LFO: { freq: 0, shape: 'sine' },
+      SLEW: { riseTime: 0.5, fallTime: 0.5 },
+      VCA: undefined,
+      OUTPUT: undefined,
+    };
+
+    const newModule: ModuleRow = {
+      id,
+      type,
+      params: params || defaultParams[type],
+    };
+
+    this.setModules([...this.modules(), newModule]);
+    return id;
+  }
+
+  deleteModule(id: string): void {
+    this.setModules(this.modules().filter((m) => m.id !== id));
+    this.setConnections(
+      this.connections().filter((conn) => conn.from.id !== id && conn.to.id !== id)
+    );
+  }
+
+  updateModule(id: string, updates: Partial<ModuleRow>): void {
+    this.setModules(this.modules().map((m) => (m.id === id ? { ...m, ...updates } : m)));
+  }
+
+  updateModuleParam(id: string, param: string, value: number | string): void {
+    this.setModules(
+      this.modules().map((m) => {
+        if (m.id !== id) return m;
+        return {
+          ...m,
+          params: { ...m.params, [param]: value },
+        };
+      })
+    );
+  }
+
+  addConnection(from: string, to: string): void {
+    const [fromId, fromPort] = from.split('.');
+    const [toId, toPort] = to.split('.');
+
+    const newConn: Connection = {
+      from: { id: fromId, port: fromPort },
+      to: { id: toId, port: toPort },
+    };
+
+    const exists = this.connections().some(
+      (c) =>
+        c.from.id === fromId && c.from.port === fromPort && c.to.id === toId && c.to.port === toPort
+    );
+
+    if (!exists) {
+      this.setConnections([...this.connections(), newConn]);
+    }
+  }
+
+  removeConnection(from: string, to: string): void {
+    const [fromId, fromPort] = from.split('.');
+    const [toId, toPort] = to.split('.');
+
+    this.setConnections(
+      this.connections().filter(
+        (c) =>
+          !(
+            c.from.id === fromId &&
+            c.from.port === fromPort &&
+            c.to.id === toId &&
+            c.to.port === toPort
+          )
+      )
+    );
+  }
+
+  loadGraph(graph: Graph): void {
+    const modules: ModuleRow[] = graph.modules.map((mod) => ({
+      id: mod.id,
+      type: mod.kind,
+      params: mod.params,
+    }));
+
+    this.setModules(modules);
+    this.setConnections(graph.connections);
+  }
+
+  toGraph(): Graph {
+    return this.graph();
+  }
+}

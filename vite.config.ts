@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
+  plugins: [solidPlugin()],
   build: {
     rollupOptions: {
       input: {

@@ -41,6 +41,12 @@ export function generateRandomGraph(): Graph {
     modules.push({ id, kind: ModuleKind.LFO, params: { freq, shape } });
   }
 
+  // Create 1 Slew module (looping envelope generator)
+  const slewId = 'slew1';
+  const riseTime = random(0.1, 2); // 100ms to 2s
+  const fallTime = random(0.1, 2); // 100ms to 2s
+  modules.push({ id: slewId, kind: ModuleKind.SLEW, params: { riseTime, fallTime } });
+
   // Create VCA and OUTPUT
   modules.push({ id: 'vca1', kind: ModuleKind.VCA });
   modules.push({ id: 'out', kind: ModuleKind.OUTPUT });
@@ -54,6 +60,22 @@ export function generateRandomGraph(): Graph {
     connections.push({
       from: { id: lfoId, port: 'out' },
       to: { id: targetVCO, port },
+    });
+  }
+
+  // 1b. Slew (looping envelope) modulates VCO or VCA
+  const slewTarget = randomChoice([...vcoIds, 'vca1']);
+  if (slewTarget === 'vca1') {
+    // Modulate VCA CV (envelope-like amplitude control)
+    connections.push({
+      from: { id: slewId, port: 'out' },
+      to: { id: 'vca1', port: 'cv' },
+    });
+  } else {
+    // Modulate a VCO pitch (slow pitch sweeps)
+    connections.push({
+      from: { id: slewId, port: 'out' },
+      to: { id: slewTarget, port: 'pitch' },
     });
   }
 

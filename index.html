@@ -7,63 +7,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🎛️ Aumlet</h1>
-    <p class="subtitle">Modular Synthesizer - AudioWorklet Edition</p>
-
-    <div class="section">
-      <h2>🎛️ Modules</h2>
-      <div class="module-controls">
-        <button id="addVCO">+ VCO</button>
-        <button id="addLFO">+ LFO</button>
-        <button id="addVCA">+ VCA</button>
-        <button id="addOutput">+ OUTPUT</button>
-        <button id="randomize" class="randomize-btn">🎲 Randomize</button>
-      </div>
-      <div class="table-container">
-        <table id="moduleTable">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Parameters</th>
-              <th>ID</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <datalist id="moduleTypes">
-        <option value="VCO">
-        <option value="VCA">
-        <option value="LFO">
-        <option value="OUTPUT">
-      </datalist>
-    </div>
-
-    <div class="section">
-      <h2>🔌 Patch Matrix</h2>
-      <div class="table-container">
-        <table id="patchMatrix" class="patch-matrix"></table>
-      </div>
-      <p class="info-text">
-        💡 Click cells to connect outputs (rows) to inputs (columns). Multiple connections = banana stacking!
-      </p>
-    </div>
-
-    <div class="section">
-      <h2>🎚️ Controls</h2>
-      <div class="controls">
-        <button id="startBtn">▶ Start Audio</button>
-        <div id="status">Ready to start...</div>
-      </div>
-      <p class="info-text">
-        🔊 Click <code>Start Audio</code> to initialize the Web Audio API and load your graph.
-        You may need to interact with the page first (browser security requirement).
-      </p>
-    </div>
-  </div>
-
-  <script type="module" src="/src/main.ts"></script>
+  <div id="app"></div>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

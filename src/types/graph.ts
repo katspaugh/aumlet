@@ -2,6 +2,7 @@ export enum ModuleKind {
   VCO = 'VCO',
   VCA = 'VCA',
   LFO = 'LFO',
+  SLEW = 'SLEW',
   OUTPUT = 'OUTPUT',
 }
 
@@ -10,6 +11,8 @@ export interface ModuleParams {
   freq?: number;
   fmSensitivity?: number;
   shape?: 'sine' | 'tri' | 'saw' | 'square';
+  riseTime?: number;
+  fallTime?: number;
 }
 
 export interface ModuleDefinition {
