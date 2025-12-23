@@ -143,13 +143,18 @@ export class ModularProcessor extends AudioWorkletProcessor {
       }
     }
 
-    // Check for cycles
-    if (sorted.length !== this.modules.size) {
-      throw new Error('Circular dependency detected in graph');
+    // Handle circular patching (feedback loops)
+    // Any modules not in sorted are part of cycles - process them after sorted ones
+    // Feedback connections naturally have a 1-block delay (~2.7ms at 48kHz)
+    const unsorted: string[] = [];
+    for (const [id] of this.modules) {
+      if (!sorted.includes(id)) {
+        unsorted.push(id);
+      }
     }
 
-    // Store sorted module references
-    this.sortedModules = sorted.map((id) => this.modules.get(id)!);
+    // Store sorted module references (acyclic first, then cycles)
+    this.sortedModules = [...sorted, ...unsorted].map((id) => this.modules.get(id)!);
   }
 
   getInputPorts(kind: string): string[] {
