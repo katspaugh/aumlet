@@ -3,7 +3,7 @@ import { ModuleKind, type Graph } from '../types/graph';
 export const DEFAULT_GRAPH: Graph = {
   modules: [
     { id: 'lfo1', kind: ModuleKind.LFO, params: { freq: 2 } },
-    { id: 'vco1', kind: ModuleKind.VCO, params: { baseFreq: 220 } },
+    { id: 'vco1', kind: ModuleKind.VCO, params: { freq: 6 } }, // 6V above C1 = ~2093Hz (C7)
     { id: 'vca1', kind: ModuleKind.VCA },
     { id: 'out', kind: ModuleKind.OUTPUT },
   ],

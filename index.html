@@ -16,7 +16,7 @@
       <textarea id="graphInput" spellcheck="false">{
   "modules": [
     { "id": "lfo1", "kind": "LFO", "params": { "freq": 2 } },
-    { "id": "vco1", "kind": "VCO", "params": { "baseFreq": 220 } },
+    { "id": "vco1", "kind": "VCO", "params": { "freq": 6 } },
     { "id": "vca1", "kind": "VCA" },
     { "id": "out", "kind": "OUTPUT" }
   ],
@@ -27,8 +27,8 @@
   ]
 }</textarea>
       <p class="info-text">
-        💡 This creates a 220Hz saw wave modulated by a 2Hz LFO (tremolo effect).
-        Edit the JSON to create your own patches!
+        💡 VCO at 6V (≈2093Hz C7) modulated by 2Hz LFO (tremolo).
+        Frequency in v/oct: 0V=C1, +1V=1 octave up. Edit to create your own patches!
       </p>
     </div>
 

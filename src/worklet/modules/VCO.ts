@@ -1,15 +1,18 @@
 import { Module } from './Module';
 import type { ModuleParams } from '../../types/graph';
 
+// Reference frequency for 0V (C1 = MIDI note 24)
+const REFERENCE_FREQ = 32.703; // Hz
+
 export class VCO extends Module {
   private phase: number;
-  private baseFreq: number;
+  private freq: number; // Base frequency in volts
   private fmSensitivity: number;
 
   constructor(id: string, kind: string, params: ModuleParams) {
     super(id, kind, params);
     this.phase = 0;
-    this.baseFreq = params.baseFreq || 110;
+    this.freq = params.freq !== undefined ? params.freq : 0; // Default to 0V (C1)
     this.fmSensitivity = params.fmSensitivity || 50;
   }
 
@@ -19,8 +22,10 @@ export class VCO extends Module {
     const fm = this.inputs.fm || new Float32Array(128);
 
     for (let i = 0; i < 128; i++) {
-      // 1V/oct for pitch input: freq = baseFreq * 2^(pitchV)
-      let freq = this.baseFreq * Math.pow(2, pitch[i]);
+      // V/oct: freq = REFERENCE_FREQ * 2^(freqV + pitchV)
+      // Base frequency from parameter + pitch CV input
+      const totalVolts = this.freq + pitch[i];
+      let freq = REFERENCE_FREQ * Math.pow(2, totalVolts);
 
       // Linear FM: add frequency modulation
       freq += fm[i] * this.fmSensitivity;
