@@ -1,5 +1,6 @@
 import type { Graph } from './types/graph';
 import type { WorkletMessage } from './types/messages';
+import { generateRandomGraph } from './utils/randomGraph';
 
 let audioContext: AudioContext | null = null;
 let modularNode: AudioWorkletNode | null = null;
@@ -8,6 +9,12 @@ let modularNode: AudioWorkletNode | null = null;
 const startBtn = document.getElementById('startBtn') as HTMLButtonElement;
 const graphInput = document.getElementById('graphInput') as HTMLTextAreaElement;
 const statusDiv = document.getElementById('status') as HTMLDivElement;
+
+// Generate random graph on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const randomGraph = generateRandomGraph();
+  graphInput.value = JSON.stringify(randomGraph, null, 2);
+});
 
 type StatusType = 'info' | 'success' | 'error';
 
