@@ -109,10 +109,13 @@ class ModularProcessor extends AudioWorkletProcessor {
         module.outputs[port] = new Float32Array(128);
       }
 
-      // Initialize input port mappings (will be filled during connection processing)
+      // Initialize input buffers and connection tracking
       const inputPorts = this.getInputPorts(module.kind);
+      module.inputs = {};
+      module.inputConnections = {};
       for (const port of inputPorts) {
-        module.inputs[port] = [];
+        module.inputs[port] = new Float32Array(128);
+        module.inputConnections[port] = [];
       }
     }
 
@@ -129,8 +132,8 @@ class ModularProcessor extends AudioWorkletProcessor {
       adjacency.get(conn.from.id).push(conn.to.id);
       inDegree.set(conn.to.id, inDegree.get(conn.to.id) + 1);
 
-      // Bind input: track all sources (for banana stacking)
-      toModule.inputs[conn.to.port].push({
+      // Track connection: store reference to source output buffer
+      toModule.inputConnections[conn.to.port].push({
         buffer: fromModule.outputs[conn.from.port],
         sourceId: conn.from.id,
         sourcePort: conn.from.port
@@ -207,23 +210,26 @@ class ModularProcessor extends AudioWorkletProcessor {
     // Process modules in topologically sorted order
     for (const module of this.sortedModules) {
       // Prepare inputs: handle banana stacking (multi-source)
-      for (const [portName, sources] of Object.entries(module.inputs)) {
+      for (const [portName, sources] of Object.entries(module.inputConnections)) {
+        const inputBuffer = module.inputs[portName];
+
         if (sources.length === 0) {
-          // No connection, use zero volts
-          module.inputs[portName] = new Float32Array(128);
+          // No connection, fill with zero volts
+          inputBuffer.fill(0);
         } else if (sources.length === 1) {
-          // Single source: direct reference
-          module.inputs[portName] = sources[0].buffer;
+          // Single source: copy from source buffer
+          const sourceBuffer = sources[0].buffer;
+          for (let i = 0; i < 128; i++) {
+            inputBuffer[i] = sourceBuffer[i];
+          }
         } else {
-          // Multiple sources: sum into scratch buffer
-          const scratch = module.getScratchBuffer();
-          scratch.fill(0);
+          // Multiple sources: sum into input buffer (banana stacking)
+          inputBuffer.fill(0);
           for (const source of sources) {
             for (let i = 0; i < 128; i++) {
-              scratch[i] += source.buffer[i];
+              inputBuffer[i] += source.buffer[i];
             }
           }
-          module.inputs[portName] = scratch;
         }
       }
 
