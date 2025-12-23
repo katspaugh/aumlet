@@ -1,15 +1,18 @@
 import { Module } from './Module';
 import type { ModuleParams } from '../../types/graph';
 
+// Reference frequency for 0V (C1 = MIDI note 24)
+const REFERENCE_FREQ = 32.703; // Hz
+
 export class LFO extends Module {
   private phase: number;
-  private freq: number;
+  private freq: number; // Base frequency in volts
   private shape: 'sine' | 'tri' | 'saw' | 'square';
 
   constructor(id: string, kind: string, params: ModuleParams) {
     super(id, kind, params);
     this.phase = 0;
-    this.freq = params.freq || 2;
+    this.freq = params.freq !== undefined ? params.freq : -5; // Default to -5V (~1Hz)
     this.shape = (params.shape as 'sine' | 'tri' | 'saw' | 'square') || 'sine';
   }
 
@@ -18,8 +21,9 @@ export class LFO extends Module {
     const rate = this.inputs.rate || new Float32Array(128);
 
     for (let i = 0; i < 128; i++) {
-      // Optional CV modulation of rate (simple linear offset)
-      const modFreq = this.freq + rate[i];
+      // V/oct: freq = REFERENCE_FREQ * 2^(freqV + rateV)
+      const totalVolts = this.freq + rate[i];
+      const frequency = REFERENCE_FREQ * Math.pow(2, totalVolts);
 
       // Generate waveform based on shape (bipolar ±5V)
       let sample = 0;
@@ -47,7 +51,7 @@ export class LFO extends Module {
       out[i] = sample * 5;
 
       // Advance phase
-      this.phase += Math.max(0.001, modFreq) / sampleRate;
+      this.phase += Math.max(0.001, frequency) / sampleRate;
       while (this.phase >= 1) this.phase -= 1;
     }
   }
