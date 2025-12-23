@@ -3,6 +3,7 @@ export enum ModuleKind {
   VCA = 'VCA',
   LFO = 'LFO',
   SLEW = 'SLEW',
+  PAN = 'PAN',
   OUTPUT = 'OUTPUT',
 }
 
@@ -13,6 +14,7 @@ export interface ModuleParams {
   shape?: 'sine' | 'tri' | 'saw' | 'square';
   riseTime?: number;
   fallTime?: number;
+  pan?: number;
 }
 
 export interface ModuleDefinition {

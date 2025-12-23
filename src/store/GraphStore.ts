@@ -9,6 +9,7 @@ interface ModuleRow {
     shape?: 'sine' | 'tri' | 'saw' | 'square';
     riseTime?: number;
     fallTime?: number;
+    pan?: number;
   };
 }
 
@@ -23,16 +24,16 @@ export class GraphStore {
   readonly setConnections = this._connections[1];
 
   // Computed signals - use createMemo instead of Computed class
-  readonly outputs = createMemo(() => {
-    return this.modules()
-      .map((m) => {
-        const type = m.type.toUpperCase();
-        if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
-          return `${m.id}.out`;
-        }
-        return null;
-      })
-      .filter((x): x is string => x !== null);
+
+  readonly stereoOutputs = createMemo(() => {
+    const outputs: string[] = [];
+    this.modules().forEach((m) => {
+      const type = m.type.toUpperCase();
+      if (type === 'PAN') {
+        outputs.push(`${m.id}.outL`, `${m.id}.outR`);
+      }
+    });
+    return outputs;
   });
 
   readonly inputs = createMemo(() => {
@@ -47,8 +48,10 @@ export class GraphStore {
         inputs.push(`${m.id}.rate`);
       } else if (type === 'SLEW') {
         inputs.push(`${m.id}.in`);
+      } else if (type === 'PAN') {
+        inputs.push(`${m.id}.in`, `${m.id}.pan`);
       } else if (type === 'OUTPUT') {
-        inputs.push(`${m.id}.in`);
+        inputs.push(`${m.id}.in`, `${m.id}.inL`, `${m.id}.inR`);
       }
     });
     return inputs;
@@ -63,6 +66,22 @@ export class GraphStore {
       map.get(key)!.add(val);
     });
     return map;
+  });
+
+  private readonly outputsMono = createMemo(() => {
+    return this.modules()
+      .map((m) => {
+        const type = m.type.toUpperCase();
+        if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
+          return `${m.id}.out`;
+        }
+        return null;
+      })
+      .filter((x): x is string => x !== null);
+  });
+
+  readonly outputs = createMemo(() => {
+    return [...this.outputsMono(), ...this.stereoOutputs()];
   });
 
   readonly graph = createMemo(() => {
@@ -88,6 +107,7 @@ export class GraphStore {
       VCO: { freq: 0 },
       LFO: { freq: 0, shape: 'sine' },
       SLEW: { riseTime: 0.5, fallTime: 0.5 },
+      PAN: { pan: 0 },
       VCA: undefined,
       OUTPUT: undefined,
     };

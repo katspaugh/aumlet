@@ -47,8 +47,9 @@ export function generateRandomGraph(): Graph {
   const fallTime = random(0.1, 2); // 100ms to 2s
   modules.push({ id: slewId, kind: ModuleKind.SLEW, params: { riseTime, fallTime } });
 
-  // Create VCA and OUTPUT
+  // Create VCA, PAN, and OUTPUT
   modules.push({ id: 'vca1', kind: ModuleKind.VCA });
+  modules.push({ id: 'pan1', kind: ModuleKind.PAN, params: { pan: random(-1, 1) } });
   modules.push({ id: 'out', kind: ModuleKind.OUTPUT });
 
   // Now create weird connections with feedback
@@ -139,13 +140,23 @@ export function generateRandomGraph(): Graph {
     to: { id: 'vca1', port: 'cv' },
   });
 
-  // 7. VCA to OUTPUT
+  // 7. VCA to PAN
   connections.push({
     from: { id: 'vca1', port: 'out' },
-    to: { id: 'out', port: 'in' },
+    to: { id: 'pan1', port: 'in' },
   });
 
-  // 8. Maybe add feedback from VCA back to a VCO (extra weird!)
+  // 8. PAN to OUTPUT (stereo)
+  connections.push({
+    from: { id: 'pan1', port: 'outL' },
+    to: { id: 'out', port: 'inL' },
+  });
+  connections.push({
+    from: { id: 'pan1', port: 'outR' },
+    to: { id: 'out', port: 'inR' },
+  });
+
+  // 9. Maybe add feedback from VCA back to a VCO (extra weird!)
   if (Math.random() > 0.7) {
     const feedbackVCO = randomChoice(vcoIds);
     connections.push({

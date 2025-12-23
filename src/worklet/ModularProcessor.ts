@@ -5,6 +5,7 @@ import { VCO } from './modules/VCO';
 import { VCA } from './modules/VCA';
 import { LFO } from './modules/LFO';
 import { Slew } from './modules/Slew';
+import { Pan } from './modules/Pan';
 import { OutputModule } from './modules/OutputModule';
 
 export class ModularProcessor extends AudioWorkletProcessor {
@@ -62,6 +63,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCA,
       LFO,
       SLEW: Slew,
+      PAN: Pan,
       OUTPUT: OutputModule,
     };
 
@@ -165,7 +167,8 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCA: ['in', 'cv'],
       LFO: ['rate'],
       SLEW: ['in'],
-      OUTPUT: ['in'],
+      PAN: ['in', 'pan'],
+      OUTPUT: ['in', 'inL', 'inR'],
     };
     return ports[kind] || [];
   }
@@ -176,6 +179,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       VCA: ['out'],
       LFO: ['out'],
       SLEW: ['out'],
+      PAN: ['outL', 'outR'],
       OUTPUT: ['out'],
     };
     return ports[kind] || [];
@@ -229,14 +233,31 @@ export class ModularProcessor extends AudioWorkletProcessor {
 
     // Get final output from OUTPUT module with soft clipping
     if (this.outputModule && output && output[0]) {
-      const finalOut = this.outputModule.outputs.out;
+      const outputModule = this.outputModule;
+      const hasLeft = outputModule.inputConnections.inL?.length > 0;
+      const hasRight = outputModule.inputConnections.inR?.length > 0;
+      const leftSource =
+        hasLeft && outputModule.inputs.inL ? outputModule.inputs.inL : outputModule.outputs.out;
+      const rightSource =
+        hasRight && outputModule.inputs.inR ? outputModule.inputs.inR : outputModule.outputs.out;
+      const hasStereoInputs = hasLeft || hasRight;
 
       // Apply soft clipping (tanh) to prevent harsh clipping
       for (let i = 0; i < 128; i++) {
-        const clipped = Math.tanh(finalOut[i]);
-        output[0][i] = clipped;
+        let left = 0;
+        let right = 0;
+
+        if (hasStereoInputs) {
+          left = hasLeft && leftSource ? leftSource[i] : hasRight && rightSource ? rightSource[i] : 0;
+          right = hasRight && rightSource ? rightSource[i] : hasLeft && leftSource ? leftSource[i] : 0;
+        } else {
+          left = leftSource ? leftSource[i] : 0;
+          right = rightSource ? rightSource[i] : left;
+        }
+
+        output[0][i] = Math.tanh(left);
         if (output[1]) {
-          output[1][i] = clipped; // Mono to stereo
+          output[1][i] = Math.tanh(right);
         }
       }
     } else if (output && output[0]) {

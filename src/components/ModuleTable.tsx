@@ -71,7 +71,21 @@ export function ModuleTable(props: ModuleTableProps) {
           />
         </Show>
 
-        <Show when={!['VCO', 'LFO', 'SLEW'].includes(type)}>
+        <Show when={type === 'PAN'}>
+          <input
+            type="number"
+            class="param-input"
+            value={params.pan ?? 0}
+            onInput={(e) => props.onParamChange(module.id, 'pan', parseFloat(e.currentTarget.value))}
+            placeholder="pan"
+            style={{ width: '70px' }}
+            step="0.1"
+            min="-1"
+            max="1"
+          />
+        </Show>
+
+        <Show when={!['VCO', 'LFO', 'SLEW', 'PAN'].includes(type)}>
           <span class="no-params">-</span>
         </Show>
       </>
