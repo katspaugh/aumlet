@@ -101,6 +101,21 @@ button:disabled {
   transform: none;
 }
 
+.start-audio-btn {
+  background: #ffb000;
+  color: #1a1a1a;
+  box-shadow: 0 0 0 2px rgba(255, 176, 0, 0.35);
+}
+
+.start-audio-btn:hover {
+  background: #ff9800;
+}
+
+.start-audio-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.35);
+}
+
 #status {
   flex: 1;
   padding: 12px;

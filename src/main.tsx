@@ -281,7 +281,7 @@ function App() {
       <div class="section">
         <h2>🎚️ Controls</h2>
         <div class="controls">
-          <button ref={startBtn} onClick={initAudio}>
+          <button class="start-audio-btn" ref={startBtn} onClick={initAudio}>
             ▶ Start Audio
           </button>
           <button onClick={handleSharePatch}>🔗 Share Patch</button>
