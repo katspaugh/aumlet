@@ -50,6 +50,8 @@ export class GraphStore {
         inputs.push(`${m.id}.in`);
       } else if (type === 'PAN') {
         inputs.push(`${m.id}.in`, `${m.id}.pan`);
+      } else if (type === 'RECTIFIER') {
+        inputs.push(`${m.id}.in`);
       } else if (type === 'OUTPUT') {
         inputs.push(`${m.id}.in`, `${m.id}.inL`, `${m.id}.inR`);
       }
@@ -72,12 +74,15 @@ export class GraphStore {
     return this.modules()
       .map((m) => {
         const type = m.type.toUpperCase();
-        if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
-          return `${m.id}.out`;
-        }
-        return null;
-      })
-      .filter((x): x is string => x !== null);
+      if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
+        return `${m.id}.out`;
+      }
+      if (type === 'RECTIFIER') {
+        return `${m.id}.out`;
+      }
+      return null;
+    })
+    .filter((x): x is string => x !== null);
   });
 
   readonly outputs = createMemo(() => {
@@ -108,6 +113,7 @@ export class GraphStore {
       LFO: { freq: 0, shape: 'sine' },
       SLEW: { riseTime: 0.5, fallTime: 0.5 },
       PAN: { pan: 0 },
+      RECTIFIER: undefined,
       VCA: undefined,
       OUTPUT: undefined,
     };

@@ -4,6 +4,7 @@ export enum ModuleKind {
   LFO = 'LFO',
   SLEW = 'SLEW',
   PAN = 'PAN',
+  RECTIFIER = 'RECTIFIER',
   OUTPUT = 'OUTPUT',
 }
 
