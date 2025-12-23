@@ -1,7 +1,8 @@
 import { render } from 'solid-js/web';
 import { createEffect, onCleanup } from 'solid-js';
 import type { WorkletMessage } from './types/messages';
-import type { Graph, ModuleKind } from './types/graph';
+import { ModuleKind } from './types/graph';
+import type { Graph } from './types/graph';
 import { generateRandomGraph } from './utils/randomGraph';
 import { GraphStore } from './store/GraphStore';
 import { ModuleTable } from './components/ModuleTable';
