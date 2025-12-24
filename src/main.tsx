@@ -149,8 +149,7 @@ function App() {
     const randomGraph = generateRandomGraph();
     graphStore.loadGraph(randomGraph);
     if (modularNode) {
-      stopAudio();
-      void initAudio();
+      setStatus('Randomized graph.', 'info');
     }
   };
 
