@@ -466,26 +466,26 @@ export function generateBinauralGraph(): Graph {
     },
   });
 
-  connections.push({ from: { id: vcoL, port: 'out' }, to: { id: slewL, port: 'in' } });
-  connections.push({ from: { id: vcoR, port: 'out' }, to: { id: slewR, port: 'in' } });
-  connections.push({ from: { id: slewL, port: 'out' }, to: { id: vcaL, port: 'in' } });
-  connections.push({ from: { id: slewR, port: 'out' }, to: { id: vcaR, port: 'in' } });
+  connections.push({ from: { id: vcoL, port: 'out' }, to: { id: vcaL, port: 'in' } });
+  connections.push({ from: { id: vcoR, port: 'out' }, to: { id: vcaR, port: 'in' } });
 
-  connections.push({ from: { id: lfoL, port: 'out' }, to: { id: vcaL, port: 'cv' } });
-  connections.push({ from: { id: lfoR, port: 'out' }, to: { id: vcaR, port: 'cv' } });
+  connections.push({ from: { id: lfoL, port: 'out' }, to: { id: slewL, port: 'in' } });
+  connections.push({ from: { id: lfoR, port: 'out' }, to: { id: slewR, port: 'in' } });
 
   if (Math.random() > 0.3) {
-    connections.push({ from: { id: lfoL, port: 'out' }, to: { id: vcoL, port: 'pitch' } });
+    connections.push({ from: { id: slewL, port: 'out' }, to: { id: vcoL, port: 'pitch' } });
   }
   if (Math.random() > 0.3) {
-    connections.push({ from: { id: lfoR, port: 'out' }, to: { id: vcoR, port: 'pitch' } });
+    connections.push({ from: { id: slewR, port: 'out' }, to: { id: vcoR, port: 'pitch' } });
   }
 
-  if (Math.random() > 0.4) {
-    connections.push({ from: { id: slewL, port: 'out' }, to: { id: delayL, port: 'time' } });
+  connections.push({ from: { id: slewL, port: 'out' }, to: { id: delayL, port: 'time' } });
+  connections.push({ from: { id: slewR, port: 'out' }, to: { id: delayR, port: 'time' } });
+  if (Math.random() > 0.5) {
+    connections.push({ from: { id: slewL, port: 'out' }, to: { id: delayL, port: 'mix' } });
   }
-  if (Math.random() > 0.4) {
-    connections.push({ from: { id: slewR, port: 'out' }, to: { id: delayR, port: 'time' } });
+  if (Math.random() > 0.5) {
+    connections.push({ from: { id: slewR, port: 'out' }, to: { id: delayR, port: 'mix' } });
   }
 
   connections.push({ from: { id: vcaL, port: 'out' }, to: { id: delayL, port: 'in' } });
