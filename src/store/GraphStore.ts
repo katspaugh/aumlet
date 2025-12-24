@@ -54,7 +54,7 @@ export class GraphStore {
       } else if (type === 'PAN') {
         inputs.push(`${m.id}.in`, `${m.id}.pan`);
       } else if (type === 'DELAY') {
-        inputs.push(`${m.id}.in`);
+        inputs.push(`${m.id}.in`, `${m.id}.time`, `${m.id}.feedback`, `${m.id}.mix`);
       } else if (type === 'RECTIFIER') {
         inputs.push(`${m.id}.in`);
       } else if (type === 'OUTPUT') {

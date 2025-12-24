@@ -172,7 +172,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       LFO: ['rate'],
       SLEW: ['in'],
       PAN: ['in', 'pan'],
-      DELAY: ['in'],
+      DELAY: ['in', 'time', 'feedback', 'mix'],
       RECTIFIER: ['in'],
       OUTPUT: ['in', 'inL', 'inR'],
     };

@@ -26,16 +26,28 @@ export class Delay extends Module {
   process(): void {
     const input = this.inputs.in || new Float32Array(128);
     const out = this.outputs.out;
+    const timeCv = this.inputs.time;
+    const feedbackCv = this.inputs.feedback;
+    const mixCv = this.inputs.mix;
+    const hasTimeCv = this.inputConnections.time && this.inputConnections.time.length > 0;
+    const hasFeedbackCv = this.inputConnections.feedback && this.inputConnections.feedback.length > 0;
+    const hasMixCv = this.inputConnections.mix && this.inputConnections.mix.length > 0;
     const sr = globalThis.sampleRate || 48000;
-    const delaySeconds = clamp(this.delayTime, 0.01, 2);
-    const feedback = clamp(this.feedback, 0, 0.95);
-    const mix = clamp(this.mix, 0, 1);
-    const delaySamples = Math.min(this.maxSamples - 1, Math.max(1, Math.round(delaySeconds * sr)));
-
-    let readIndex = this.writeIndex - delaySamples;
-    if (readIndex < 0) readIndex += this.maxSamples;
 
     for (let i = 0; i < 128; i++) {
+      const timeMod = hasTimeCv && timeCv ? (timeCv[i] / 5) * 2 : 0;
+      const feedbackMod = hasFeedbackCv && feedbackCv ? feedbackCv[i] / 5 : 0;
+      const mixMod = hasMixCv && mixCv ? mixCv[i] / 5 : 0;
+      const delaySeconds = clamp(this.delayTime + timeMod, 0.01, 2);
+      const feedback = clamp(this.feedback + feedbackMod, 0, 0.95);
+      const mix = clamp(this.mix + mixMod, 0, 1);
+      const delaySamples = Math.min(
+        this.maxSamples - 1,
+        Math.max(1, Math.round(delaySeconds * sr))
+      );
+      let readIndex = this.writeIndex - delaySamples;
+      if (readIndex < 0) readIndex += this.maxSamples;
+
       const delayed = this.buffer[readIndex];
       const dry = input[i];
       out[i] = dry * (1 - mix) + delayed * mix;
@@ -43,8 +55,6 @@ export class Delay extends Module {
 
       this.writeIndex += 1;
       if (this.writeIndex >= this.maxSamples) this.writeIndex = 0;
-      readIndex += 1;
-      if (readIndex >= this.maxSamples) readIndex = 0;
     }
   }
 }
