@@ -10,6 +10,9 @@ interface ModuleRow {
     riseTime?: number;
     fallTime?: number;
     pan?: number;
+    delayTime?: number;
+    feedback?: number;
+    mix?: number;
   };
 }
 
@@ -50,6 +53,8 @@ export class GraphStore {
         inputs.push(`${m.id}.in`);
       } else if (type === 'PAN') {
         inputs.push(`${m.id}.in`, `${m.id}.pan`);
+      } else if (type === 'DELAY') {
+        inputs.push(`${m.id}.in`);
       } else if (type === 'RECTIFIER') {
         inputs.push(`${m.id}.in`);
       } else if (type === 'OUTPUT') {
@@ -74,7 +79,7 @@ export class GraphStore {
     return this.modules()
       .map((m) => {
         const type = m.type.toUpperCase();
-      if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT'].includes(type)) {
+      if (['VCO', 'VCA', 'LFO', 'SLEW', 'OUTPUT', 'DELAY'].includes(type)) {
         return `${m.id}.out`;
       }
       if (type === 'RECTIFIER') {
@@ -113,6 +118,7 @@ export class GraphStore {
       LFO: { freq: 0, shape: 'sine' },
       SLEW: { riseTime: 0.5, fallTime: 0.5 },
       PAN: { pan: 0 },
+      DELAY: { delayTime: 0.25, feedback: 0.35, mix: 0.4 },
       RECTIFIER: undefined,
       VCA: undefined,
       OUTPUT: undefined,

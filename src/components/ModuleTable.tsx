@@ -85,7 +85,47 @@ export function ModuleTable(props: ModuleTableProps) {
           />
         </Show>
 
-        <Show when={!['VCO', 'LFO', 'SLEW', 'PAN'].includes(type)}>
+        <Show when={type === 'DELAY'}>
+          <input
+            type="number"
+            class="param-input"
+            value={params.delayTime ?? 0.25}
+            onInput={(e) =>
+              props.onParamChange(module.id, 'delayTime', parseFloat(e.currentTarget.value))
+            }
+            placeholder="time (s)"
+            style={{ width: '80px' }}
+            step="0.01"
+            min="0.01"
+            max="2"
+          />
+          <input
+            type="number"
+            class="param-input"
+            value={params.feedback ?? 0.35}
+            onInput={(e) =>
+              props.onParamChange(module.id, 'feedback', parseFloat(e.currentTarget.value))
+            }
+            placeholder="fb"
+            style={{ width: '70px' }}
+            step="0.05"
+            min="0"
+            max="0.95"
+          />
+          <input
+            type="number"
+            class="param-input"
+            value={params.mix ?? 0.4}
+            onInput={(e) => props.onParamChange(module.id, 'mix', parseFloat(e.currentTarget.value))}
+            placeholder="mix"
+            style={{ width: '70px' }}
+            step="0.05"
+            min="0"
+            max="1"
+          />
+        </Show>
+
+        <Show when={!['VCO', 'LFO', 'SLEW', 'PAN', 'DELAY'].includes(type)}>
           <span class="no-params">-</span>
         </Show>
       </>

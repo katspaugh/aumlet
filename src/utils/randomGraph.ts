@@ -49,6 +49,15 @@ export function generateRandomGraph(): Graph {
 
   // Create VCA, PAN, and OUTPUT
   modules.push({ id: 'vca1', kind: ModuleKind.VCA });
+  modules.push({
+    id: 'delay1',
+    kind: ModuleKind.DELAY,
+    params: {
+      delayTime: random(0.1, 0.6),
+      feedback: random(0.1, 0.6),
+      mix: random(0.2, 0.7),
+    },
+  });
   modules.push({ id: 'pan1', kind: ModuleKind.PAN, params: { pan: random(-1, 1) } });
   modules.push({ id: 'out', kind: ModuleKind.OUTPUT });
 
@@ -140,13 +149,19 @@ export function generateRandomGraph(): Graph {
     to: { id: 'vca1', port: 'cv' },
   });
 
-  // 7. VCA to PAN
+  // 7. VCA to DELAY
   connections.push({
     from: { id: 'vca1', port: 'out' },
+    to: { id: 'delay1', port: 'in' },
+  });
+
+  // 8. DELAY to PAN
+  connections.push({
+    from: { id: 'delay1', port: 'out' },
     to: { id: 'pan1', port: 'in' },
   });
 
-  // 8. PAN to OUTPUT (stereo)
+  // 9. PAN to OUTPUT (stereo)
   connections.push({
     from: { id: 'pan1', port: 'outL' },
     to: { id: 'out', port: 'inL' },
@@ -156,7 +171,7 @@ export function generateRandomGraph(): Graph {
     to: { id: 'out', port: 'inR' },
   });
 
-  // 9. Maybe add feedback from VCA back to a VCO (extra weird!)
+  // 10. Maybe add feedback from VCA back to a VCO (extra weird!)
   if (Math.random() > 0.7) {
     const feedbackVCO = randomChoice(vcoIds);
     connections.push({

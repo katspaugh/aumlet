@@ -4,6 +4,7 @@ export enum ModuleKind {
   LFO = 'LFO',
   SLEW = 'SLEW',
   PAN = 'PAN',
+  DELAY = 'DELAY',
   RECTIFIER = 'RECTIFIER',
   OUTPUT = 'OUTPUT',
 }
@@ -16,6 +17,9 @@ export interface ModuleParams {
   riseTime?: number;
   fallTime?: number;
   pan?: number;
+  delayTime?: number;
+  feedback?: number;
+  mix?: number;
 }
 
 export interface ModuleDefinition {

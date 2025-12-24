@@ -6,6 +6,7 @@ import { VCA } from './modules/VCA';
 import { LFO } from './modules/LFO';
 import { Slew } from './modules/Slew';
 import { Pan } from './modules/Pan';
+import { Delay } from './modules/Delay';
 import { Rectifier } from './modules/Rectifier';
 import { OutputModule } from './modules/OutputModule';
 
@@ -65,6 +66,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       LFO,
       SLEW: Slew,
       PAN: Pan,
+      DELAY: Delay,
       RECTIFIER: Rectifier,
       OUTPUT: OutputModule,
     };
@@ -170,6 +172,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       LFO: ['rate'],
       SLEW: ['in'],
       PAN: ['in', 'pan'],
+      DELAY: ['in'],
       RECTIFIER: ['in'],
       OUTPUT: ['in', 'inL', 'inR'],
     };
@@ -183,6 +186,7 @@ export class ModularProcessor extends AudioWorkletProcessor {
       LFO: ['out'],
       SLEW: ['out'],
       PAN: ['outL', 'outR'],
+      DELAY: ['out'],
       RECTIFIER: ['out'],
       OUTPUT: ['out'],
     };
