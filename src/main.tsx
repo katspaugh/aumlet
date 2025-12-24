@@ -197,7 +197,7 @@ function App() {
 
       const workletPath = import.meta.env.DEV
         ? '/src/worklet/index.ts'
-        : new URL('./assets/modular-processor.js', import.meta.url).href;
+        : new URL('modular-processor.js', import.meta.url).href;
 
       await audioContext.audioWorklet.addModule(workletPath);
 
