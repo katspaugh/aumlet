@@ -202,7 +202,9 @@ function App() {
 
       setStatus('Creating modular processor...', 'info');
 
-      modularNode = new AudioWorkletNode(audioContext, 'modular-processor');
+      modularNode = new AudioWorkletNode(audioContext, 'modular-processor', {
+        outputChannelCount: [2],
+      });
 
       modularNode.port.onmessage = (e: MessageEvent<WorkletMessage>) => {
         if (e.data.type === 'graphLoaded') {

@@ -1,5 +1,6 @@
 import { createSignal, createMemo } from 'solid-js';
 import type { Graph, ModuleDefinition, Connection, ModuleKind } from '../types/graph';
+import { createEmojiId } from '../utils/emojiIds';
 
 interface ModuleRow {
   id: string;
@@ -109,9 +110,8 @@ export class GraphStore {
 
   // Actions
   addModule(type: ModuleKind, params?: ModuleRow['params']): string {
-    const lowerType = type.toLowerCase();
-    const count = this.modules().filter((m) => m.type === type).length + 1;
-    const id = `${lowerType}${count}`;
+    const existingIds = new Set(this.modules().map((m) => m.id));
+    const id = createEmojiId(type.toLowerCase(), existingIds);
 
     const defaultParams: Record<ModuleKind, ModuleRow['params'] | undefined> = {
       VCO: { freq: 0 },

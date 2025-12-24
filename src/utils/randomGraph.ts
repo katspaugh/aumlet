@@ -1,4 +1,5 @@
 import { ModuleKind, type Graph } from '../types/graph';
+import { createEmojiId } from './emojiIds';
 
 function random(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -15,13 +16,19 @@ function randomChoice<T>(arr: T[]): T {
 export function generateRandomGraph(): Graph {
   const modules = [];
   const connections = [];
+  const existingIds = new Set<string>();
+  const nextId = (prefix: string): string => {
+    const id = createEmojiId(prefix, existingIds);
+    existingIds.add(id);
+    return id;
+  };
 
   // Create 2-3 VCOs with random frequencies
   const numVCOs = randomInt(2, 3);
   const vcoIds: string[] = [];
 
   for (let i = 0; i < numVCOs; i++) {
-    const id = `vco${i + 1}`;
+    const id = nextId('vco');
     vcoIds.push(id);
     // Random frequency from -2V to 8V (sub-audio to high pitch)
     const freq = Math.round(random(-2, 8));
@@ -33,7 +40,7 @@ export function generateRandomGraph(): Graph {
   const lfoIds: string[] = [];
 
   for (let i = 0; i < numLFOs; i++) {
-    const id = `lfo${i + 1}`;
+    const id = nextId('lfo');
     lfoIds.push(id);
     // Random LFO frequency from -6V to -3V (0.5Hz to 4Hz)
     const freq = Math.round(random(-6, -3));
@@ -42,15 +49,19 @@ export function generateRandomGraph(): Graph {
   }
 
   // Create 1 Slew module (looping envelope generator)
-  const slewId = 'slew1';
+  const slewId = nextId('slew');
   const riseTime = random(0.1, 2); // 100ms to 2s
   const fallTime = random(0.1, 2); // 100ms to 2s
   modules.push({ id: slewId, kind: ModuleKind.SLEW, params: { riseTime, fallTime } });
 
   // Create VCA, PAN, and OUTPUT
-  modules.push({ id: 'vca1', kind: ModuleKind.VCA });
+  const vcaId = nextId('vca');
+  const delayId = nextId('delay');
+  const panId = nextId('pan');
+  const outId = nextId('out');
+  modules.push({ id: vcaId, kind: ModuleKind.VCA });
   modules.push({
-    id: 'delay1',
+    id: delayId,
     kind: ModuleKind.DELAY,
     params: {
       delayTime: random(0.1, 0.6),
@@ -58,8 +69,8 @@ export function generateRandomGraph(): Graph {
       mix: random(0.2, 0.7),
     },
   });
-  modules.push({ id: 'pan1', kind: ModuleKind.PAN, params: { pan: random(-1, 1) } });
-  modules.push({ id: 'out', kind: ModuleKind.OUTPUT });
+  modules.push({ id: panId, kind: ModuleKind.PAN, params: { pan: random(-1, 1) } });
+  modules.push({ id: outId, kind: ModuleKind.OUTPUT });
 
   // Now create weird connections with feedback
 
@@ -74,12 +85,12 @@ export function generateRandomGraph(): Graph {
   }
 
   // 1b. Slew (looping envelope) modulates VCO or VCA
-  const slewTarget = randomChoice([...vcoIds, 'vca1']);
-  if (slewTarget === 'vca1') {
+  const slewTarget = randomChoice([...vcoIds, vcaId]);
+  if (slewTarget === vcaId) {
     // Modulate VCA CV (envelope-like amplitude control)
     connections.push({
       from: { id: slewId, port: 'out' },
-      to: { id: 'vca1', port: 'cv' },
+      to: { id: vcaId, port: 'cv' },
     });
   } else {
     // Modulate a VCO pitch (slow pitch sweeps)
@@ -138,7 +149,7 @@ export function generateRandomGraph(): Graph {
   for (const vcoId of vcoIds) {
     connections.push({
       from: { id: vcoId, port: 'out' },
-      to: { id: 'vca1', port: 'in' },
+      to: { id: vcaId, port: 'in' },
     });
   }
 
@@ -146,36 +157,36 @@ export function generateRandomGraph(): Graph {
   const vcaLFO = randomChoice(lfoIds);
   connections.push({
     from: { id: vcaLFO, port: 'out' },
-    to: { id: 'vca1', port: 'cv' },
+    to: { id: vcaId, port: 'cv' },
   });
 
   // 7. VCA to DELAY
   connections.push({
-    from: { id: 'vca1', port: 'out' },
-    to: { id: 'delay1', port: 'in' },
+    from: { id: vcaId, port: 'out' },
+    to: { id: delayId, port: 'in' },
   });
 
   // 8. DELAY to PAN
   connections.push({
-    from: { id: 'delay1', port: 'out' },
-    to: { id: 'pan1', port: 'in' },
+    from: { id: delayId, port: 'out' },
+    to: { id: panId, port: 'in' },
   });
 
   // 9. PAN to OUTPUT (stereo)
   connections.push({
-    from: { id: 'pan1', port: 'outL' },
-    to: { id: 'out', port: 'inL' },
+    from: { id: panId, port: 'outL' },
+    to: { id: outId, port: 'inL' },
   });
   connections.push({
-    from: { id: 'pan1', port: 'outR' },
-    to: { id: 'out', port: 'inR' },
+    from: { id: panId, port: 'outR' },
+    to: { id: outId, port: 'inR' },
   });
 
   // 10. Maybe add feedback from VCA back to a VCO (extra weird!)
   if (Math.random() > 0.7) {
     const feedbackVCO = randomChoice(vcoIds);
     connections.push({
-      from: { id: 'vca1', port: 'out' },
+      from: { id: vcaId, port: 'out' },
       to: { id: feedbackVCO, port: 'fm' },
     });
   }
