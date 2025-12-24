@@ -15,4 +15,18 @@ export interface ErrorMessage {
   message: string;
 }
 
-export type WorkletMessage = LoadGraphMessage | GraphLoadedMessage | ErrorMessage;
+export interface ScopeFrame {
+  id: string;
+  samples: number[];
+}
+
+export interface ScopeDataMessage {
+  type: 'scopeData';
+  frames: ScopeFrame[];
+}
+
+export type WorkletMessage =
+  | LoadGraphMessage
+  | GraphLoadedMessage
+  | ErrorMessage
+  | ScopeDataMessage;

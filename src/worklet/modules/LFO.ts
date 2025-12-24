@@ -1,5 +1,9 @@
 import { Module } from './Module';
 import type { ModuleParams } from '../../types/graph';
+export const LFO_PARAM_KEYS = {
+  FREQ: 'freq',
+  SHAPE: 'shape',
+} as const;
 
 // Reference frequency for 0V (C1 = MIDI note 24)
 const REFERENCE_FREQ = 32.703; // Hz

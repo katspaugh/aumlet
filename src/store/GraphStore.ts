@@ -7,6 +7,7 @@ interface ModuleRow {
   type: ModuleKind;
   params?: {
     freq?: number;
+    vcoShape?: 'sine' | 'tri' | 'saw' | 'square';
     shape?: 'sine' | 'tri' | 'saw' | 'square';
     riseTime?: number;
     fallTime?: number;
@@ -114,7 +115,7 @@ export class GraphStore {
     const id = createEmojiId(type.toLowerCase(), existingIds);
 
     const defaultParams: Record<ModuleKind, ModuleRow['params'] | undefined> = {
-      VCO: { freq: 0 },
+      VCO: { freq: 0, vcoShape: 'saw' },
       LFO: { freq: 0, shape: 'sine' },
       SLEW: { riseTime: 0.5, fallTime: 0.5 },
       PAN: { pan: 0 },
@@ -135,10 +136,45 @@ export class GraphStore {
   }
 
   deleteModule(id: string): void {
-    this.setModules(this.modules().filter((m) => m.id !== id));
-    this.setConnections(
-      this.connections().filter((conn) => conn.from.id !== id && conn.to.id !== id)
+    const modules = this.modules();
+    const connections = this.connections();
+    const module = modules.find((m) => m.id === id);
+    const outputIds = new Set(modules.filter((m) => m.type === 'OUTPUT').map((m) => m.id));
+    const bypassInputs: Partial<Record<ModuleKind, string[]>> = {
+      VCA: ['in'],
+      PAN: ['in'],
+      DELAY: ['in'],
+      RECTIFIER: ['in'],
+      SLEW: ['in'],
+    };
+
+    const outgoingToOutput = connections.filter(
+      (conn) => conn.from.id === id && outputIds.has(conn.to.id)
     );
+    const incoming = connections.filter((conn) => conn.to.id === id);
+    const bypassPorts = module ? bypassInputs[module.type] || [] : [];
+    const bypassSources = incoming.filter((conn) => bypassPorts.includes(conn.to.port));
+
+    const remaining = connections.filter((conn) => conn.from.id !== id && conn.to.id !== id);
+    if (outgoingToOutput.length > 0 && bypassSources.length > 0) {
+      const existing = new Set(
+        remaining.map((conn) => `${conn.from.id}.${conn.from.port}->${conn.to.id}.${conn.to.port}`)
+      );
+      for (const outConn of outgoingToOutput) {
+        for (const inConn of bypassSources) {
+          const key = `${inConn.from.id}.${inConn.from.port}->${outConn.to.id}.${outConn.to.port}`;
+          if (existing.has(key)) continue;
+          existing.add(key);
+          remaining.push({
+            from: { ...inConn.from },
+            to: { ...outConn.to },
+          });
+        }
+      }
+    }
+
+    this.setModules(modules.filter((m) => m.id !== id));
+    this.setConnections(remaining);
   }
 
   updateModule(id: string, updates: Partial<ModuleRow>): void {

@@ -13,6 +13,7 @@ export interface ModuleParams {
   baseFreq?: number;
   freq?: number;
   fmSensitivity?: number;
+  vcoShape?: 'sine' | 'tri' | 'saw' | 'square';
   shape?: 'sine' | 'tri' | 'saw' | 'square';
   riseTime?: number;
   fallTime?: number;
@@ -21,6 +22,7 @@ export interface ModuleParams {
   feedback?: number;
   mix?: number;
 }
+
 
 export interface ModuleDefinition {
   id: string;

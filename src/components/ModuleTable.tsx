@@ -1,5 +1,12 @@
-import { For, Show } from 'solid-js';
+import { For } from 'solid-js';
 import type { GraphStore } from '../store/GraphStore';
+import { ModuleKind } from '../types/graph';
+import type { ParamDefMap } from '../types/params';
+import { DELAY_PARAM_KEYS } from '../worklet/modules/Delay';
+import { LFO_PARAM_KEYS } from '../worklet/modules/LFO';
+import { PAN_PARAM_KEYS } from '../worklet/modules/Pan';
+import { SLEW_PARAM_KEYS } from '../worklet/modules/Slew';
+import { VCO_PARAM_KEYS } from '../worklet/modules/VCO';
 
 interface ModuleTableProps {
   store: GraphStore;
@@ -8,128 +15,148 @@ interface ModuleTableProps {
 }
 
 export function ModuleTable(props: ModuleTableProps) {
+  const PARAM_DEFS: Record<ModuleKind, ParamDefMap> = {
+    [ModuleKind.VCO]: {
+      [VCO_PARAM_KEYS.FREQ]: {
+        kind: 'number',
+        placeholder: 'freq (V)',
+        width: '80px',
+        defaultValue: 0,
+      },
+      [VCO_PARAM_KEYS.SHAPE]: {
+        kind: 'select',
+        options: ['sine', 'tri', 'saw', 'square'],
+        defaultValue: 'saw',
+      },
+    },
+    [ModuleKind.LFO]: {
+      [LFO_PARAM_KEYS.FREQ]: {
+        kind: 'number',
+        placeholder: 'freq (V)',
+        width: '80px',
+        defaultValue: 0,
+      },
+      [LFO_PARAM_KEYS.SHAPE]: {
+        kind: 'select',
+        options: ['sine', 'tri', 'saw', 'square'],
+        defaultValue: 'sine',
+      },
+    },
+    [ModuleKind.SLEW]: {
+      [SLEW_PARAM_KEYS.RISE_TIME]: {
+        kind: 'number',
+        placeholder: 'rise (s)',
+        width: '70px',
+        step: 0.1,
+        min: 0.001,
+        defaultValue: 0.5,
+      },
+      [SLEW_PARAM_KEYS.FALL_TIME]: {
+        kind: 'number',
+        placeholder: 'fall (s)',
+        width: '70px',
+        step: 0.1,
+        min: 0.001,
+        defaultValue: 0.5,
+      },
+    },
+    [ModuleKind.PAN]: {
+      [PAN_PARAM_KEYS.PAN]: {
+        kind: 'number',
+        placeholder: 'pan',
+        width: '70px',
+        step: 0.1,
+        min: -1,
+        max: 1,
+        defaultValue: 0,
+      },
+    },
+    [ModuleKind.DELAY]: {
+      [DELAY_PARAM_KEYS.DELAY_TIME]: {
+        kind: 'number',
+        placeholder: 'time (s)',
+        width: '80px',
+        step: 0.01,
+        min: 0.01,
+        max: 2,
+        defaultValue: 0.25,
+      },
+      [DELAY_PARAM_KEYS.FEEDBACK]: {
+        kind: 'number',
+        placeholder: 'fb',
+        width: '70px',
+        step: 0.05,
+        min: 0,
+        max: 0.95,
+        defaultValue: 0.35,
+      },
+      [DELAY_PARAM_KEYS.MIX]: {
+        kind: 'number',
+        placeholder: 'mix',
+        width: '70px',
+        step: 0.05,
+        min: 0,
+        max: 1,
+        defaultValue: 0.4,
+      },
+    },
+    [ModuleKind.VCA]: {},
+    [ModuleKind.RECTIFIER]: {},
+    [ModuleKind.OUTPUT]: {},
+  };
+
   const renderParams = (module: {
     id: string;
-    type: string;
+    type: ModuleKind;
     params?: Record<string, number | string>;
   }) => {
-    const type = module.type.toUpperCase();
     const params = module.params || {};
+    const defs = PARAM_DEFS[module.type] || {};
+    const defEntries = Object.entries(defs);
 
-    return (
-      <>
-        <Show when={type === 'VCO' || type === 'LFO'}>
-          <input
-            type="number"
-            class="param-input"
-            value={params.freq ?? 0}
-            onInput={(e) =>
-              props.onParamChange(module.id, 'freq', parseFloat(e.currentTarget.value))
-            }
-            placeholder="freq (V)"
-            style={{ width: '80px' }}
-          />
-        </Show>
+    if (defEntries.length === 0) {
+      return <span class="no-params">-</span>;
+    }
 
-        <Show when={type === 'LFO'}>
+    return defEntries.map(([key, def]) => {
+      if (def.kind === 'select') {
+        const rawValue = params[key] as string | undefined;
+        const fallbackValue =
+          key === VCO_PARAM_KEYS.SHAPE
+            ? (params[LFO_PARAM_KEYS.SHAPE] as string | undefined)
+            : undefined;
+        const picked = rawValue ?? fallbackValue;
+        const value = picked && def.options.includes(picked) ? picked : def.defaultValue;
+        return (
           <select
             class="param-input"
-            value={params.shape || 'sine'}
-            onChange={(e) => props.onParamChange(module.id, 'shape', e.currentTarget.value)}
+            value={value}
+            onChange={(e) => props.onParamChange(module.id, key, e.currentTarget.value)}
           >
-            <option value="sine">sine</option>
-            <option value="tri">tri</option>
-            <option value="saw">saw</option>
-            <option value="square">square</option>
+            {def.options.map((option) => (
+              <option value={option} selected={option === value}>
+                {option}
+              </option>
+            ))}
           </select>
-        </Show>
+        );
+      }
 
-        <Show when={type === 'SLEW'}>
-          <input
-            type="number"
-            class="param-input"
-            value={params.riseTime ?? 0.5}
-            onInput={(e) =>
-              props.onParamChange(module.id, 'riseTime', parseFloat(e.currentTarget.value))
-            }
-            placeholder="rise (s)"
-            style={{ width: '70px' }}
-            step="0.1"
-            min="0.001"
-          />
-          <input
-            type="number"
-            class="param-input"
-            value={params.fallTime ?? 0.5}
-            onInput={(e) =>
-              props.onParamChange(module.id, 'fallTime', parseFloat(e.currentTarget.value))
-            }
-            placeholder="fall (s)"
-            style={{ width: '70px' }}
-            step="0.1"
-            min="0.001"
-          />
-        </Show>
-
-        <Show when={type === 'PAN'}>
-          <input
-            type="number"
-            class="param-input"
-            value={params.pan ?? 0}
-            onInput={(e) => props.onParamChange(module.id, 'pan', parseFloat(e.currentTarget.value))}
-            placeholder="pan"
-            style={{ width: '70px' }}
-            step="0.1"
-            min="-1"
-            max="1"
-          />
-        </Show>
-
-        <Show when={type === 'DELAY'}>
-          <input
-            type="number"
-            class="param-input"
-            value={params.delayTime ?? 0.25}
-            onInput={(e) =>
-              props.onParamChange(module.id, 'delayTime', parseFloat(e.currentTarget.value))
-            }
-            placeholder="time (s)"
-            style={{ width: '80px' }}
-            step="0.01"
-            min="0.01"
-            max="2"
-          />
-          <input
-            type="number"
-            class="param-input"
-            value={params.feedback ?? 0.35}
-            onInput={(e) =>
-              props.onParamChange(module.id, 'feedback', parseFloat(e.currentTarget.value))
-            }
-            placeholder="fb"
-            style={{ width: '70px' }}
-            step="0.05"
-            min="0"
-            max="0.95"
-          />
-          <input
-            type="number"
-            class="param-input"
-            value={params.mix ?? 0.4}
-            onInput={(e) => props.onParamChange(module.id, 'mix', parseFloat(e.currentTarget.value))}
-            placeholder="mix"
-            style={{ width: '70px' }}
-            step="0.05"
-            min="0"
-            max="1"
-          />
-        </Show>
-
-        <Show when={!['VCO', 'LFO', 'SLEW', 'PAN', 'DELAY'].includes(type)}>
-          <span class="no-params">-</span>
-        </Show>
-      </>
-    );
+      const value = (params[key] as number | undefined) ?? def.defaultValue;
+      return (
+        <input
+          type="number"
+          class="param-input"
+          value={value}
+          onInput={(e) => props.onParamChange(module.id, key, parseFloat(e.currentTarget.value))}
+          placeholder={def.placeholder}
+          style={{ width: def.width }}
+          step={def.step}
+          min={def.min}
+          max={def.max}
+        />
+      );
+    });
   };
 
   return (

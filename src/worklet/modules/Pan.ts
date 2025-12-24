@@ -1,5 +1,8 @@
 import { Module } from './Module';
 import type { ModuleParams } from '../../types/graph';
+export const PAN_PARAM_KEYS = {
+  PAN: 'pan',
+} as const;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));

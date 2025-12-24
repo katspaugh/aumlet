@@ -1,5 +1,9 @@
 import { Module } from './Module';
 import type { ModuleParams } from '../../types/graph';
+export const SLEW_PARAM_KEYS = {
+  RISE_TIME: 'riseTime',
+  FALL_TIME: 'fallTime',
+} as const;
 
 export class Slew extends Module {
   private value: number; // Current output value (0-10V)

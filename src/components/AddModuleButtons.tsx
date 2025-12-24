@@ -4,6 +4,8 @@ import { ModuleKind } from '../types/graph';
 interface AddModuleButtonsProps {
   onAddModule: (type: ModuleKind) => void;
   onRandomizeGraph: () => void;
+  binauralEnabled: boolean;
+  onToggleBinaural: (enabled: boolean) => void;
 }
 
 export function AddModuleButtons(props: AddModuleButtonsProps) {
@@ -18,9 +20,19 @@ export function AddModuleButtons(props: AddModuleButtonsProps) {
           </button>
         )}
       </For>
-      <button class="randomize-btn" onClick={props.onRandomizeGraph}>
-        🎲 Randomize
-      </button>
+      <div class="randomize-controls">
+        <label class="binaural-toggle">
+          <input
+            type="checkbox"
+            checked={props.binauralEnabled}
+            onChange={(e) => props.onToggleBinaural(e.currentTarget.checked)}
+          />
+          Binaural
+        </label>
+        <button class="randomize-btn" onClick={props.onRandomizeGraph}>
+          🎲 Randomize
+        </button>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,12 @@ import type { ModuleParams } from '../../types/graph';
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
+export const DELAY_PARAM_KEYS = {
+  DELAY_TIME: 'delayTime',
+  FEEDBACK: 'feedback',
+  MIX: 'mix',
+} as const;
+
 export class Delay extends Module {
   private buffer: Float32Array;
   private writeIndex: number;

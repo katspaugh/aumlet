@@ -5,6 +5,7 @@ export class VCA extends Module {
     const out = this.outputs.out;
     const audioIn = this.inputs.in || new Float32Array(128);
     const cv = this.inputs.cv || new Float32Array(128);
+    const hasCv = this.inputConnections.cv && this.inputConnections.cv.length > 0;
 
     for (let i = 0; i < 128; i++) {
       // VCA behavior: out = in * (cv / 5) where 5V = unity gain
@@ -12,7 +13,8 @@ export class VCA extends Module {
       // At 5V: gain = 1.0 (unity)
       // At 0V: gain = 0.0 (silence)
       // At -5V: gain = -1.0 (inverted + silence when bipolar LFO used)
-      out[i] = audioIn[i] * (cv[i] / 5);
+      const gainCv = hasCv ? cv[i] : 5;
+      out[i] = audioIn[i] * (gainCv / 5);
     }
   }
 }

@@ -14,12 +14,16 @@ export class ModularProcessor extends AudioWorkletProcessor {
   private modules: Map<string, Module>;
   private sortedModules: Module[];
   private outputModule: OutputModule | null;
+  private scopeTick: number;
+  private readonly scopeStride: number;
 
   constructor() {
     super();
     this.modules = new Map();
     this.sortedModules = [];
     this.outputModule = null;
+    this.scopeTick = 0;
+    this.scopeStride = 12;
 
     this.port.onmessage = (e) => this.handleMsg(e.data as WorkletMessage);
   }
@@ -193,6 +197,39 @@ export class ModularProcessor extends AudioWorkletProcessor {
     return ports[kind] || [];
   }
 
+  private getScopeSamples(module: Module): number[] | null {
+    const outputPorts = this.getOutputPorts(module.kind);
+    const out = outputPorts.includes('out') ? module.outputs.out : undefined;
+    const outL = outputPorts.includes('outL') ? module.outputs.outL : undefined;
+    const outR = outputPorts.includes('outR') ? module.outputs.outR : undefined;
+
+    if (out) {
+      return this.downsample(out);
+    }
+
+    if (outL && outR) {
+      const mixed = new Float32Array(outL.length);
+      for (let i = 0; i < outL.length; i++) {
+        mixed[i] = (outL[i] + outR[i]) * 0.5;
+      }
+      return this.downsample(mixed);
+    }
+
+    if (outL) return this.downsample(outL);
+    if (outR) return this.downsample(outR);
+    return null;
+  }
+
+  private downsample(buffer: Float32Array): number[] {
+    const target = 32;
+    const step = Math.max(1, Math.floor(buffer.length / target));
+    const samples: number[] = [];
+    for (let i = 0; i < target; i++) {
+      samples.push(buffer[i * step]);
+    }
+    return samples;
+  }
+
   process(
     _inputs: Float32Array[][],
     outputs: Float32Array[][],
@@ -237,6 +274,21 @@ export class ModularProcessor extends AudioWorkletProcessor {
 
       // Run module's DSP
       module.process();
+    }
+
+    if (this.sortedModules.length > 0) {
+      this.scopeTick += 1;
+      if (this.scopeTick % this.scopeStride === 0) {
+        const frames = [];
+        for (const module of this.sortedModules) {
+          const samples = this.getScopeSamples(module);
+          if (!samples) continue;
+          frames.push({ id: module.id, samples });
+        }
+        if (frames.length > 0) {
+          this.port.postMessage({ type: 'scopeData', frames });
+        }
+      }
     }
 
     // Get final output from OUTPUT module with soft clipping

@@ -163,6 +163,7 @@ code {
   gap: 8px;
   margin-bottom: 15px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .module-controls button {
@@ -170,8 +171,37 @@ code {
   font-size: 12px;
 }
 
-.randomize-btn {
+.randomize-controls {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.binaural-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #d0d0d0;
+}
+
+.scope-canvas {
+  display: block;
+  border: 1px solid #2a2a2a;
+  border-radius: 2px;
+}
+
+.scope-canvas.tiny {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+}
+
+.patch-matrix .output-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Tables */

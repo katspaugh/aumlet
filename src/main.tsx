@@ -1,9 +1,9 @@
 import { render } from 'solid-js/web';
-import { createEffect, onCleanup } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type { WorkletMessage } from './types/messages';
 import { ModuleKind } from './types/graph';
 import type { Graph } from './types/graph';
-import { generateRandomGraph } from './utils/randomGraph';
+import { generateBinauralGraph, generateRandomGraph } from './utils/randomGraph';
 import { GraphStore } from './store/GraphStore';
 import { ModuleTable } from './components/ModuleTable';
 import { PatchMatrix } from './components/PatchMatrix';
@@ -112,6 +112,8 @@ graphStore.loadGraph(initialGraph);
 function App() {
   let startBtn: HTMLButtonElement | undefined;
   let statusDiv: HTMLDivElement | undefined;
+  const [binauralEnabled, setBinauralEnabled] = createSignal(false);
+  const [scopeData, setScopeData] = createSignal<Record<string, number[]>>({});
 
   // Auto-reload graph when it changes (if audio is running)
   createEffect(() => {
@@ -146,7 +148,7 @@ function App() {
   };
 
   const handleRandomizeGraph = () => {
-    const randomGraph = generateRandomGraph();
+    const randomGraph = binauralEnabled() ? generateBinauralGraph() : generateRandomGraph();
     graphStore.loadGraph(randomGraph);
     if (modularNode) {
       setStatus('Randomized graph.', 'info');
@@ -211,6 +213,14 @@ function App() {
           setStatus('🎵 Audio running! Modular synth active.', 'success');
         } else if (e.data.type === 'error') {
           setStatus(`❌ Error: ${e.data.message}`, 'error');
+        } else if (e.data.type === 'scopeData') {
+          setScopeData((prev) => {
+            const next = { ...prev };
+            for (const frame of e.data.frames) {
+              next[frame.id] = frame.samples;
+            }
+            return next;
+          });
         }
       };
 
@@ -301,6 +311,8 @@ function App() {
         <AddModuleButtons
           onAddModule={handleAddModule}
           onRandomizeGraph={handleRandomizeGraph}
+          binauralEnabled={binauralEnabled()}
+          onToggleBinaural={setBinauralEnabled}
         />
         <div class="table-container">
           <ModuleTable
@@ -314,7 +326,11 @@ function App() {
       <div class="section">
         <h2>🔌 Patch Matrix</h2>
         <div class="table-container">
-          <PatchMatrix store={graphStore} onConnectionToggle={handleConnectionToggle} />
+          <PatchMatrix
+            store={graphStore}
+            onConnectionToggle={handleConnectionToggle}
+            scopeData={scopeData()}
+          />
         </div>
         <p class="info-text">
           💡 Click cells to connect outputs (rows) to inputs (columns). Multiple connections =
