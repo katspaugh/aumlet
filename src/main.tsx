@@ -213,7 +213,7 @@ function App() {
           setStatus('🎵 Audio running! Modular synth active.', 'success');
         } else if (e.data.type === 'error') {
           setStatus(`❌ Error: ${e.data.message}`, 'error');
-        } else if (e.data.type === 'scopeData') {
+        } else if (e.data.type === 'scopeData' && 'frames' in e.data) {
           setScopeData((prev) => {
             const next = { ...prev };
             for (const frame of e.data.frames) {
