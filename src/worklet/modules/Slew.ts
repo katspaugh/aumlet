@@ -25,7 +25,7 @@ export class Slew extends Module {
     const input = this.inputs.in;
 
     // Get sampleRate from global scope - use globalThis for safety
-    const sr = globalThis.sampleRate || 48000; // fallback to 48kHz
+    const sr = (globalThis as { sampleRate?: number }).sampleRate || 48000; // fallback to 48kHz
 
     // Check if input is connected
     const hasInput = this.inputConnections.in && this.inputConnections.in.length > 0;

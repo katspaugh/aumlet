@@ -27,6 +27,7 @@ export class VCO extends Module {
     const pitch = this.inputs.pitch || new Float32Array(128);
     const fm = this.inputs.fm || new Float32Array(128);
     const shape = (this.params.vcoShape as 'sine' | 'tri' | 'saw' | 'square') || this.shape;
+    const sr = (globalThis as { sampleRate?: number }).sampleRate || 48000;
 
     for (let i = 0; i < 128; i++) {
       // V/oct: freq = REFERENCE_FREQ * 2^(freqV + pitchV)
@@ -38,7 +39,7 @@ export class VCO extends Module {
       freq += fm[i] * this.fmSensitivity;
 
       // Clamp frequency to reasonable range
-      freq = Math.max(0.1, Math.min(freq, sampleRate / 2));
+      freq = Math.max(0.1, Math.min(freq, sr / 2));
 
       let sample = 0;
       switch (shape) {
@@ -60,7 +61,7 @@ export class VCO extends Module {
       out[i] = sample * 5;
 
       // Advance phase
-      this.phase += freq / sampleRate;
+      this.phase += freq / sr;
       while (this.phase >= 1) this.phase -= 1;
       while (this.phase < 0) this.phase += 1;
     }

@@ -14,15 +14,15 @@ function randomInt(min: number, max: number): number {
   return Math.floor(random(min, max + 1));
 }
 
-function randomChoice<T>(arr: T[]): T {
+function randomChoice<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 const SHAPES = ['sine', 'tri', 'saw', 'square'] as const;
 
 export function generateRandomGraph(): Graph {
-  const modules = [];
-  const connections = [];
+  const modules: Graph['modules'] = [];
+  const connections: Graph['connections'] = [];
   const existingIds = new Set<string>();
   const nextId = (prefix: string): string => {
     const id = createEmojiId(prefix, existingIds);
@@ -357,8 +357,8 @@ export function generateRandomGraph(): Graph {
 }
 
 export function generateBinauralGraph(): Graph {
-  const modules = [];
-  const connections = [];
+  const modules: Graph['modules'] = [];
+  const connections: Graph['connections'] = [];
   const existingIds = new Set<string>();
   const nextId = (prefix: string): string => {
     const id = createEmojiId(prefix, existingIds);

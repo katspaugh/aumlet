@@ -20,7 +20,7 @@ export class Delay extends Module {
 
   constructor(id: string, kind: string, params: ModuleParams) {
     super(id, kind, params);
-    const sr = globalThis.sampleRate || 48000;
+    const sr = (globalThis as { sampleRate?: number }).sampleRate || 48000;
     this.maxSamples = Math.max(1, Math.floor(sr * 2));
     this.buffer = new Float32Array(this.maxSamples);
     this.writeIndex = 0;
@@ -38,7 +38,7 @@ export class Delay extends Module {
     const hasTimeCv = this.inputConnections.time && this.inputConnections.time.length > 0;
     const hasFeedbackCv = this.inputConnections.feedback && this.inputConnections.feedback.length > 0;
     const hasMixCv = this.inputConnections.mix && this.inputConnections.mix.length > 0;
-    const sr = globalThis.sampleRate || 48000;
+    const sr = (globalThis as { sampleRate?: number }).sampleRate || 48000;
 
     for (let i = 0; i < 128; i++) {
       const timeMod = hasTimeCv && timeCv ? (timeCv[i] / 5) * 2 : 0;

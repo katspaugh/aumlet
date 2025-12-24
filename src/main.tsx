@@ -233,6 +233,10 @@ function App() {
         graph: graphStore.toGraph(),
       });
 
+      if (audioContext.state !== 'running') {
+        await audioContext.resume();
+      }
+
       if (startBtn) {
         startBtn.textContent = '⏸ Stop Audio';
         startBtn.onclick = stopAudio;

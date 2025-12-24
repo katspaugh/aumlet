@@ -23,6 +23,7 @@ export class LFO extends Module {
   process(): void {
     const out = this.outputs.out;
     const rate = this.inputs.rate || new Float32Array(128);
+    const sr = (globalThis as { sampleRate?: number }).sampleRate || 48000;
 
     for (let i = 0; i < 128; i++) {
       // V/oct: freq = REFERENCE_FREQ * 2^(freqV + rateV)
@@ -55,7 +56,7 @@ export class LFO extends Module {
       out[i] = sample * 5;
 
       // Advance phase
-      this.phase += Math.max(0.001, frequency) / sampleRate;
+      this.phase += Math.max(0.001, frequency) / sr;
       while (this.phase >= 1) this.phase -= 1;
     }
   }
