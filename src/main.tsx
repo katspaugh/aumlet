@@ -1,6 +1,6 @@
 import { render } from 'solid-js/web';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
-import type { WorkletMessage } from './types/messages';
+import type { ScopeDataMessage, WorkletMessage } from './types/messages';
 import { ModuleKind } from './types/graph';
 import type { Graph } from './types/graph';
 import { generateBinauralGraph, generateRandomGraph } from './utils/randomGraph';
@@ -213,10 +213,11 @@ function App() {
           setStatus('🎵 Audio running! Modular synth active.', 'success');
         } else if (e.data.type === 'error') {
           setStatus(`❌ Error: ${e.data.message}`, 'error');
-        } else if (e.data.type === 'scopeData' && 'frames' in e.data) {
+        } else if (e.data.type === 'scopeData') {
+          const data = e.data as ScopeDataMessage;
           setScopeData((prev) => {
             const next = { ...prev };
-            for (const frame of e.data.frames) {
+            for (const frame of data.frames) {
               next[frame.id] = frame.samples;
             }
             return next;
